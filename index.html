@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GalauAI - Suara Hati</title>
+  <style>
+    /* Global Styles */
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      color:#eee;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
+      background:linear-gradient(-45deg,#0f0f0f,#1a1a1a,#111,#0d0d0d);
+      background-size:400% 400%;
+      animation:sadVibeGradient 20s ease infinite;
+      position:relative;
+      overflow:hidden;
+    }
+    @keyframes sadVibeGradient {0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+    /* Overlay for API Key Input */
+    .overlay {
+      position:absolute; top:0; left:0;
+      width:100%; height:100%;
+      background:rgba(0,0,0,0.9);
+      display:flex; justify-content:center; align-items:center;
+      z-index:10;
+      animation:overlayFade 1s ease;
+    }
+    @keyframes overlayFade { from {opacity:0;} to {opacity:1;} }
+    .overlay-card {
+      background:rgba(30,30,30,0.95);
+      padding:2rem;
+      border-radius:16px;
+      text-align:left;
+      box-shadow:0 10px 25px rgba(0,0,0,0.7);
+      width:90%; max-width:500px;
+      animation:cardPop 0.6s ease;
+      color:#ddd;
+    }
+    @keyframes cardPop { 0% {transform:scale(0.8); opacity:0;} 100% {transform:scale(1); opacity:1;} }
+    .overlay-card h2 {
+      margin-bottom:1rem;
+      font-size:1.5rem;
+      color:#ff9aa2;
+      text-shadow:0 0 4px #000;
+      text-align:center;
+    }
+    .overlay-card p {
+      margin-bottom:1rem;
+      color:#ccc;
+      font-size:0.95rem;
+      text-align:center;
+    }
+    .overlay-card ol {
+      margin-left:1rem;
+      margin-bottom:1.5rem;
+      color:#ddd;
+    }
+    .overlay-card li {
+      margin-bottom:0.7rem;
+      line-height:1.4;
+      font-size:0.9rem;
+    }
+    .overlay-card a {
+      color:#4da6ff;
+      text-decoration:none;
+    }
+    .overlay-card a:hover {
+      text-decoration:underline;
+    }
+    .overlay-card input {
+      width:100%; padding:0.8rem;
+      border:none; border-radius:8px;
+      margin-bottom:1rem;
+      font-size:1rem;
+    }
+    .overlay-card button {
+      width:100%; padding:0.8rem;
+      background:#ff4e4e; color:#fff;
+      border:none; border-radius:8px;
+      font-size:1rem; cursor:pointer;
+      box-shadow:0 4px 10px rgba(255,78,78,0.6);
+      transition:background 0.3s, transform 0.2s;
+    }
+    .overlay-card button:hover {
+      background:#ff1c1c;
+      transform:scale(1.05);
+    }
+
+    /* Rain & Noise Overlays */
+    body::before{content:"";position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;background-image:radial-gradient(#fff1 1px,transparent 1px),radial-gradient(#fff1 1px,transparent 1px);background-size:3px 3px,6px 6px;opacity:0.1;animation:noiseMove 60s linear infinite}
+    @keyframes noiseMove{0%{transform:translate(0,0)}100%{transform:translate(-100px,100px)}}
+    body::after{content:"";position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;background-image:linear-gradient(transparent 80%,rgba(255,255,255,0.1) 100%);background-size:2px 100px;animation:rain 0.5s linear infinite;opacity:0.2}
+    @keyframes rain{0%{background-position:0 0}100%{background-position:0 100px}}
+
+    /* Main Container */
+    .container {position:relative; background:rgba(0,0,0,0.75);padding:2rem;border-radius:16px;max-width:600px;width:90%;box-shadow:0 10px 25px rgba(0,0,0,0.6);text-align:center;backdrop-filter:blur(4px);z-index:1;animation:fadeIn 1.5s ease-in-out;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+    h1{font-size:2.2rem;margin-bottom:1rem;color:#ff9aa2;text-shadow:1px 1px 2px #000}
+    .output{font-size:1.3rem;line-height:1.8;margin:1.5rem 0;min-height:100px;background:rgba(255,255,255,0.05);border:1px dashed #ff9aa2;border-radius:10px;padding:0.5rem 1rem;white-space:pre-line;}
+    .controls{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-bottom:1.5rem;}
+    button.control{background:linear-gradient(145deg,#ff9aa2,#ffd1dc);border:none;padding:0.75rem 1.5rem;border-radius:20px;cursor:pointer;font-weight:600;color:#000;box-shadow:0 4px 10px rgba(255,154,162,0.4);transition:all .3s ease;}
+    button.control:hover{transform:scale(1.1) rotate(-1deg);box-shadow:0 6px 15px rgba(255,154,162,0.6)}
+    input[type="text"]{padding:0.75rem;width:100%;border-radius:12px;border:none;outline:none;background:rgba(255,255,255,0.1);color:#fff;margin-top:0.5rem;}
+    audio{margin-top:1rem;width:100%;border-radius:12px}
+    #nowPlaying{font-size:0.9rem;color:#ccc;margin-top:0.5rem}
+    @media(max-width:480px){.controls{flex-direction:column;align-items:stretch}.output{font-size:1rem}}
+  </style>
+</head>
+<body>
+  <div class="overlay" id="apiOverlay">
+    <div class="overlay-card">
+      <h2>Selamat Datang di GalauAI!</h2>
+      <p>Cara Mendapatkan Gemini API Key:</p>
+      <ol>
+        <li>Klik <a href="https://aistudio.google.com/apikey" target="_blank">link ini</a></li>
+        <li>Login menggunakan akun kalian</li>
+        <li>Klik tombol Create API key/Buat API key</li>
+        <li>Di kotak pencarian "Search Google Cloud Projects", pilih Gemini API</li>
+        <li>Klik tombol Create API key in existing project</li>
+        <li>Tunggu hingga proses selesai</li>
+        <li>Jika muncul "API key generated", klik tombol Copy</li>
+        <li>Masukkan key tersebut ke dalam GalauAI</li>
+      </ol>
+      <p>Selamat Menikmati!</p>
+      <input type="password" id="userKey" placeholder="Masukkan API Key Gemini Anda" />
+      <button id="saveKey">Mulai Menggalau</button>
+    </div>
+  </div>
+  <div class="container">
+    <h1>GalauAI 🖤</h1>
+    <div class="output" id="output">Ketik perasaanmu, nanti AI bantu nulisinnya...</div>
+    <div class="controls">
+      <button class="control" onclick="generateGalau('short')">💔 Galau Pendek</button>
+      <button class="control" onclick="generateGalau('medium')">😔 Galau Menengah</button>
+      <button class="control" onclick="generateGalau('long')">😭 Galau Panjang</button>
+      <button class="control" onclick="copyText()">✂️ Salin Teks</button>
+    </div>
+    <input type="text" id="customMusic" placeholder="🎶 Link lagu galau kamu sendiri..." onblur="setCustomMusic()" />
+    <audio id="player" autoplay controls></audio>
+    <div id="nowPlaying">🎵 Musik akan diputar otomatis...</div>
+  </div>
+  <script>
+    let apiKey = '';
+    const overlay = document.getElementById('apiOverlay');
+    document.getElementById('saveKey').onclick = () => {
+      const key = document.getElementById('userKey').value.trim();
+      if(key) { apiKey = key; overlay.style.display = 'none'; }
+      else alert('API Key tidak boleh kosong');
+    };
+    const output = document.getElementById('output');
+    const player = document.getElementById('player');
+    const nowPlaying = document.getElementById('nowPlaying');
+    const playlist = [
+      {title:'Golden Hour',file:'MP3/Golden Hour.mp3'},
+      {title:'Heart of The Ocean',file:'MP3/Heart of The Ocean.mp3'},
+      {title:'Memories of Spring',file:'MP3/Memories of Spring.mp3'}
+    ]; let current=0;
+    function playSong(idx){idx%=playlist.length;current=idx;const s=playlist[idx];player.src=s.file;nowPlaying.textContent='🎧 Sekarang diputar: '+s.title;player.play().catch(_=>{});}player.addEventListener('ended',()=>playSong(current+1)); window.onload=()=>playSong(0);
+    function setCustomMusic(){const l=document.getElementById('customMusic').value.trim();if(l){player.src=l;nowPlaying.textContent='🎧 Musik diganti: custom link';player.play();}}
+    function copyText(){navigator.clipboard.writeText(output.innerText).then(_=>alert('Teks disalin!'));}
+    function formatTextGalau(t){return t.replace(/([.,!?])([^ ])/g,'$1 $2').replace(/(['"])(.*?)\1/g,'“$2”').replace(/\n/g,'\n').replace(/(?<=\S)\n(?=\S)/g,'\n\n').trim();}
+    async function generateGalau(level){if(!apiKey){alert('Masukkan API Key terlebih dahulu');return;} output.innerText='Menata kata dulu...';const map={short:'15 kata atau kurang',medium:'20-30 kata',long:'40-60 kata'};const p=map[level];const pt=`Buat satu kalimat galau yang benar-benar menyentuh hati, hanya SATU kalimat tanpa daftar atau penjelasan:\n- Gaya status WA tengah malam, sendu dan termenung\n- Diawali satu emoji (🖤, 🌙, 📵, 🕰️)\n- Hindari klise atau frasa umum\n- Panjang: ${p}`;const body={contents:[{parts:[{text:pt}]}]};try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();const t=d?.candidates?.[0]?.content?.parts?.[0]?.text||'🌧️ Hampa... coba lagi.';output.innerText=formatTextGalau(t);}catch(e){output.innerText='🚫 Gagal hubungi AI. Coba lagi.';}}
+  </script>
+</body>
+</html>
